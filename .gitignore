@@ -23,3 +23,8 @@ TAGS
 # rendered man pages
 *.html
 !conf/*.html
+
+# New Zig outputs
+.zig-cache/
+compile_commands.json
+zig-out/
