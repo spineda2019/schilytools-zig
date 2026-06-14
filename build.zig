@@ -5,9 +5,22 @@ const SourceFile = struct {
     directory: []const u8,
 };
 
+const CFiles = struct {
+    hfs_iso: []const SourceFile,
+    mkisofs: []const SourceFile,
+    schily: []const SourceFile,
+};
+
+const CFlags = struct {
+    hfs_iso: []const []const u8,
+    mkisofs: []const []const u8,
+    schily: []const []const u8,
+};
+
 const Modules = struct {
     hfs_iso: *std.Build.Module,
     mkisofs: *std.Build.Module,
+    schily: *std.Build.Module,
 
     fn init(b: *std.Build) Modules {
         var this: Modules = undefined;
@@ -25,16 +38,41 @@ const Modules = struct {
 
         return this;
     }
+
+    fn setupCFiles(
+        this: *const Modules,
+        b: *std.Build,
+        comptime files: *const CFiles,
+        comptime flags: *const CFlags,
+    ) void {
+        //
+        inline for (comptime std.meta.fieldNames(Modules)) |field_name| {
+            const mod: *std.Build.Module = @field(this, field_name);
+            const c_files: []const SourceFile = @field(files, field_name);
+            const c_flags: []const []const u8 = @field(flags, field_name);
+
+            for (c_files) |file| {
+                const lp = b.path(file.directory).join(b.allocator, file.name) catch @panic("OOM");
+                mod.addCSourceFile(.{
+                    .language = .c,
+                    .file = lp,
+                    .flags = c_flags,
+                });
+            }
+        }
+    }
 };
 
 const Binaries = struct {
     hfs_iso: *std.Build.Step.Compile,
     mkisofs: *std.Build.Step.Compile,
+    schily: *std.Build.Step.Compile,
 };
 
 const BuildSteps = struct {
     hfs_iso: *std.Build.Step,
     mkisofs: *std.Build.Step,
+    schily: *std.Build.Step,
 
     fn createSteps(b: *std.Build, binaries: *const Binaries) void {
         const install_step = b.getInstallStep();
@@ -49,16 +87,8 @@ const BuildSteps = struct {
     }
 };
 
-// Although this function looks imperative, it does not perform the build
-// directly and instead it mutates the build graph (`b`) that will be then
-// executed by an external runner. The functions in `std.Build` implement a DSL
-// for defining build steps and express dependencies between them, allowing the
-// build runner to parallelize the build automatically (and the cache system to
-// know when a step doesn't need to be re-run).
-pub fn build(b: *std.Build) void {
-    const modules: Modules = .init(b);
-
-    const mod_hfs_iso_files = comptime [_]SourceFile{
+const cfiles: CFiles = .{
+    .hfs_iso = &.{
         .{ .name = "data.c", .directory = "libhfs_iso/" },
         .{ .name = "block.c", .directory = "libhfs_iso/" },
         .{ .name = "low.c", .directory = "libhfs_iso/" },
@@ -69,29 +99,8 @@ pub fn build(b: *std.Build) void {
         .{ .name = "volume.c", .directory = "libhfs_iso/" },
         .{ .name = "hfs.c", .directory = "libhfs_iso/" },
         .{ .name = "gdata.c", .directory = "libhfs_iso/" },
-    };
-    const hfs_iso_flags = comptime [_][]const u8{"-M"};
-    inline for (mod_hfs_iso_files) |file| {
-        const lp = b.path(file.directory).join(b.allocator, file.name) catch @panic("OOM");
-        modules.hfs_iso.addCSourceFile(.{
-            .language = .c,
-            .file = lp,
-            .flags = hfs_iso_flags[0..],
-        });
-    }
-    modules.hfs_iso.addSystemIncludePath(b.path("incs/x86_64-linux-gcc/"));
-    modules.hfs_iso.addSystemIncludePath(b.path("include/"));
-    modules.hfs_iso.addCMacro("SCHILY_BUILD", "");
-    modules.hfs_iso.addCMacro("APPLE_HYB", "");
-    modules.hfs_iso.addCMacro("_GNU_SOURCE", "");
-
-    const lib_hfs_iso = b.addLibrary(.{
-        .name = "hfs_iso",
-        .root_module = modules.hfs_iso,
-        .linkage = .static,
-    });
-
-    const mkisofs_files = comptime [_]SourceFile{
+    },
+    .mkisofs = &.{
         .{ .name = "mkisofs.c", .directory = "mkisofs/" },
         .{ .name = "tree.c", .directory = "mkisofs/" },
         .{ .name = "write.c", .directory = "mkisofs/" },
@@ -116,17 +125,361 @@ pub fn build(b: *std.Build) void {
         .{ .name = "dvd_file.c", .directory = "mkisofs/" },
         .{ .name = "dvd_reader.c", .directory = "mkisofs/" },
         .{ .name = "walk.c", .directory = "mkisofs/" },
-    };
-    const flags = comptime [_][]const u8{};
-    inline for (mkisofs_files) |file| {
-        const lp = b.path(file.directory).join(b.allocator, file.name) catch @panic("OOM");
-        modules.mkisofs.addCSourceFile(.{
-            .language = .c,
-            .file = lp,
-            .flags = flags[0..],
-        });
-    }
+    },
+    .schily = &.{
+        .{ .name = "cvmod.c", .directory = "libschily/stdio/" },
+        .{ .name = "dat.c", .directory = "libschily/stdio/" },
+        .{ .name = "fcons.c", .directory = "libschily/stdio/" },
+        .{ .name = "fdown.c", .directory = "libschily/stdio/" },
+        .{ .name = "fdup.c", .directory = "libschily/stdio/" },
+        .{ .name = "ffileread.c", .directory = "libschily/stdio/" },
+        .{ .name = "ffilewrite.c", .directory = "libschily/stdio/" },
+        .{ .name = "fgetaline.c", .directory = "libschily/stdio/" },
+        .{ .name = "fgetline.c", .directory = "libschily/stdio/" },
+        .{ .name = "fgetstr.c", .directory = "libschily/stdio/" },
+        .{ .name = "file_getraise.c", .directory = "libschily/stdio/" },
+        .{ .name = "file_raise.c", .directory = "libschily/stdio/" },
+        .{ .name = "fileclose.c", .directory = "libschily/stdio/" },
+        .{ .name = "fileluopen.c", .directory = "libschily/stdio/" },
+        .{ .name = "fileopen.c", .directory = "libschily/stdio/" },
+        .{ .name = "filemopen.c", .directory = "libschily/stdio/" },
+        .{ .name = "filepos.c", .directory = "libschily/stdio/" },
+        .{ .name = "fileread.c", .directory = "libschily/stdio/" },
+        .{ .name = "filereopen.c", .directory = "libschily/stdio/" },
+        .{ .name = "fileseek.c", .directory = "libschily/stdio/" },
+        .{ .name = "filesize.c", .directory = "libschily/stdio/" },
+        .{ .name = "filestat.c", .directory = "libschily/stdio/" },
+        .{ .name = "filewrite.c", .directory = "libschily/stdio/" },
+        .{ .name = "flag.c", .directory = "libschily/stdio/" },
+        .{ .name = "flush.c", .directory = "libschily/stdio/" },
+        .{ .name = "fpipe.c", .directory = "libschily/stdio/" },
+        .{ .name = "getdelim.c", .directory = "libschily/stdio/" },
+        .{ .name = "niread.c", .directory = "libschily/stdio/" },
+        .{ .name = "niwrite.c", .directory = "libschily/stdio/" },
+        .{ .name = "nixread.c", .directory = "libschily/stdio/" },
+        .{ .name = "nixwrite.c", .directory = "libschily/stdio/" },
+        .{ .name = "openfd.c", .directory = "libschily/stdio/" },
+        .{ .name = "peekc.c", .directory = "libschily/stdio/" },
+        .{ .name = "fcons64.c", .directory = "libschily/stdio/" },
+        .{ .name = "fdup64.c", .directory = "libschily/stdio/" },
+        .{ .name = "fileluopen64.c", .directory = "libschily/stdio/" },
+        .{ .name = "fileopen64.c", .directory = "libschily/stdio/" },
+        .{ .name = "filemopen64.c", .directory = "libschily/stdio/" },
+        .{ .name = "filepos64.c", .directory = "libschily/stdio/" },
+        .{ .name = "filereopen64.c", .directory = "libschily/stdio/" },
+        .{ .name = "fileseek64.c", .directory = "libschily/stdio/" },
+        .{ .name = "filesize64.c", .directory = "libschily/stdio/" },
+        .{ .name = "filestat64.c", .directory = "libschily/stdio/" },
+        .{ .name = "openfd64.c", .directory = "libschily/stdio/" },
+        .{ .name = "abspath.c", .directory = "libschily/" },
+        .{ .name = "astoi.c", .directory = "libschily/" },
+        .{ .name = "astoll.c", .directory = "libschily/" },
+        .{ .name = "astoul.c", .directory = "libschily/" },
+        .{ .name = "astoull.c", .directory = "libschily/" },
+        .{ .name = "basename.c", .directory = "libschily/" },
+        .{ .name = "breakline.c", .directory = "libschily/" },
+        .{ .name = "checkerr.c", .directory = "libschily/" },
+        .{ .name = "comerr.c", .directory = "libschily/" },
+        .{ .name = "fcomerr.c", .directory = "libschily/" },
+        .{ .name = "gtcomerr.c", .directory = "libschily/" },
+        .{ .name = "fgtcomerr.c", .directory = "libschily/" },
+        .{ .name = "chown.c", .directory = "libschily/" },
+        .{ .name = "cmpbytes.c", .directory = "libschily/" },
+        .{ .name = "cmpmbytes.c", .directory = "libschily/" },
+        .{ .name = "cmpnullbytes.c", .directory = "libschily/" },
+        .{ .name = "dirent.c", .directory = "libschily/" },
+        .{ .name = "dirname.c", .directory = "libschily/" },
+        .{ .name = "diropen.c", .directory = "libschily/" },
+        .{ .name = "dlfcn.c", .directory = "libschily/" },
+        .{ .name = "eaccess.c", .directory = "libschily/" },
+        .{ .name = "error.c", .directory = "libschily/" },
+        .{ .name = "gterror.c", .directory = "libschily/" },
+        .{ .name = "faccessat.c", .directory = "libschily/" },
+        .{ .name = "fchdir.c", .directory = "libschily/" },
+        .{ .name = "fchmodat.c", .directory = "libschily/" },
+        .{ .name = "fchownat.c", .directory = "libschily/" },
+        .{ .name = "fconv.c", .directory = "libschily/" },
+        .{ .name = "fdopendir.c", .directory = "libschily/" },
+        .{ .name = "fexec.c", .directory = "libschily/" },
+        .{ .name = "fillbytes.c", .directory = "libschily/" },
+        .{ .name = "findinpath.c", .directory = "libschily/" },
+        .{ .name = "findbytes.c", .directory = "libschily/" },
+        .{ .name = "findline.c", .directory = "libschily/" },
+        .{ .name = "fnmatch.c", .directory = "libschily/" },
+        .{ .name = "format.c", .directory = "libschily/" },
+        .{ .name = "fpoff.c", .directory = "libschily/" },
+        .{ .name = "fprformat.c", .directory = "libschily/" },
+        .{ .name = "fstatat.c", .directory = "libschily/" },
+        .{ .name = "fstatat64.c", .directory = "libschily/" },
+        .{ .name = "fstream.c", .directory = "libschily/" },
+        .{ .name = "futimens.c", .directory = "libschily/" },
+        .{ .name = "futimesat.c", .directory = "libschily/" },
+        .{ .name = "getargs.c", .directory = "libschily/" },
+        .{ .name = "getav0.c", .directory = "libschily/" },
+        .{ .name = "geterrno.c", .directory = "libschily/" },
+        .{ .name = "getexecpath.c", .directory = "libschily/" },
+        .{ .name = "getfp.c", .directory = "libschily/" },
+        .{ .name = "getgrent.c", .directory = "libschily/" },
+        .{ .name = "getdtablesize.c", .directory = "libschily/" },
+        .{ .name = "getdomainname.c", .directory = "libschily/" },
+        .{ .name = "gethostname.c", .directory = "libschily/" },
+        .{ .name = "getpagesize.c", .directory = "libschily/" },
+        .{ .name = "getlogin.c", .directory = "libschily/" },
+        .{ .name = "getnum.c", .directory = "libschily/" },
+        .{ .name = "getxnum.c", .directory = "libschily/" },
+        .{ .name = "gettnum.c", .directory = "libschily/" },
+        .{ .name = "getxtnum.c", .directory = "libschily/" },
+        .{ .name = "getperm.c", .directory = "libschily/" },
+        .{ .name = "getpwent.c", .directory = "libschily/" },
+        .{ .name = "getnstimeofday.c", .directory = "libschily/" },
+        .{ .name = "gettimeofday.c", .directory = "libschily/" },
+        .{ .name = "gid.c", .directory = "libschily/" },
+        .{ .name = "handlecond.c", .directory = "libschily/" },
+        .{ .name = "jsdprintf.c", .directory = "libschily/" },
+        .{ .name = "jsprintf.c", .directory = "libschily/" },
+        .{ .name = "jssnprintf.c", .directory = "libschily/" },
+        .{ .name = "jssprintf.c", .directory = "libschily/" },
+        .{ .name = "gtprintf.c", .directory = "libschily/" },
+        .{ .name = "kill.c", .directory = "libschily/" },
+        .{ .name = "lchmod.c", .directory = "libschily/" },
+        .{ .name = "gethostid.c", .directory = "libschily/" },
+        .{ .name = "linkat.c", .directory = "libschily/" },
+        .{ .name = "lutimens.c", .directory = "libschily/" },
+        .{ .name = "lxchdir.c", .directory = "libschily/" },
+        .{ .name = "match.c", .directory = "libschily/" },
+        .{ .name = "matchl.c", .directory = "libschily/" },
+        .{ .name = "matchmb.c", .directory = "libschily/" },
+        .{ .name = "matchmbl.c", .directory = "libschily/" },
+        .{ .name = "matchw.c", .directory = "libschily/" },
+        .{ .name = "matchwl.c", .directory = "libschily/" },
+        .{ .name = "movebytes.c", .directory = "libschily/" },
+        .{ .name = "movecbytes.c", .directory = "libschily/" },
+        .{ .name = "mkdirat.c", .directory = "libschily/" },
+        .{ .name = "mkdirs.c", .directory = "libschily/" },
+        .{ .name = "mkfifo.c", .directory = "libschily/" },
+        .{ .name = "mkfifoat.c", .directory = "libschily/" },
+        .{ .name = "mkgmtime.c", .directory = "libschily/" },
+        .{ .name = "mknodat.c", .directory = "libschily/" },
+        .{ .name = "mkstemp.c", .directory = "libschily/" },
+        .{ .name = "mem.c", .directory = "libschily/" },
+        .{ .name = "jmem.c", .directory = "libschily/" },
+        .{ .name = "fjmem.c", .directory = "libschily/" },
+        .{ .name = "openat.c", .directory = "libschily/" },
+        .{ .name = "openat64.c", .directory = "libschily/" },
+        .{ .name = "ovstrcpy.c", .directory = "libschily/" },
+        .{ .name = "permtostr.c", .directory = "libschily/" },
+        .{ .name = "procnameat.c", .directory = "libschily/" },
+        .{ .name = "putenv.c", .directory = "libschily/" },
+        .{ .name = "raisecond.c", .directory = "libschily/" },
+        .{ .name = "readlinkat.c", .directory = "libschily/" },
+        .{ .name = "rename.c", .directory = "libschily/" },
+        .{ .name = "renameat.c", .directory = "libschily/" },
+        .{ .name = "resolvepath.c", .directory = "libschily/" },
+        .{ .name = "saveargs.c", .directory = "libschily/" },
+        .{ .name = "savewd.c", .directory = "libschily/" },
+        .{ .name = "searchinpath.c", .directory = "libschily/" },
+        .{ .name = "serrmsg.c", .directory = "libschily/" },
+        .{ .name = "seterrno.c", .directory = "libschily/" },
+        .{ .name = "setfp.c", .directory = "libschily/" },
+        .{ .name = "setnstimeofday.c", .directory = "libschily/" },
+        .{ .name = "sleep.c", .directory = "libschily/" },
+        .{ .name = "snprintf.c", .directory = "libschily/" },
+        .{ .name = "spawn.c", .directory = "libschily/" },
+        .{ .name = "strcasecmp.c", .directory = "libschily/" },
+        .{ .name = "strncasecmp.c", .directory = "libschily/" },
+        .{ .name = "strcasemap.c", .directory = "libschily/" },
+        .{ .name = "strcat.c", .directory = "libschily/" },
+        .{ .name = "strcatl.c", .directory = "libschily/" },
+        .{ .name = "strchr.c", .directory = "libschily/" },
+        .{ .name = "strcmp.c", .directory = "libschily/" },
+        .{ .name = "strcpy.c", .directory = "libschily/" },
+        .{ .name = "strcspn.c", .directory = "libschily/" },
+        .{ .name = "strdup.c", .directory = "libschily/" },
+        .{ .name = "streql.c", .directory = "libschily/" },
+        .{ .name = "strlen.c", .directory = "libschily/" },
+        .{ .name = "strlcat.c", .directory = "libschily/" },
+        .{ .name = "strlcatl.c", .directory = "libschily/" },
+        .{ .name = "strlcpy.c", .directory = "libschily/" },
+        .{ .name = "strncat.c", .directory = "libschily/" },
+        .{ .name = "strncmp.c", .directory = "libschily/" },
+        .{ .name = "strncpy.c", .directory = "libschily/" },
+        .{ .name = "strndup.c", .directory = "libschily/" },
+        .{ .name = "strnlen.c", .directory = "libschily/" },
+        .{ .name = "strrchr.c", .directory = "libschily/" },
+        .{ .name = "strspn.c", .directory = "libschily/" },
+        .{ .name = "strstr.c", .directory = "libschily/" },
+        .{ .name = "swabbytes.c", .directory = "libschily/" },
+        .{ .name = "symlinkat.c", .directory = "libschily/" },
+        .{ .name = "timegm.c", .directory = "libschily/" },
+        .{ .name = "uid.c", .directory = "libschily/" },
+        .{ .name = "unlinkat.c", .directory = "libschily/" },
+        .{ .name = "uname.c", .directory = "libschily/" },
+        .{ .name = "unsetenv.c", .directory = "libschily/" },
+        .{ .name = "usleep.c", .directory = "libschily/" },
+        .{ .name = "utimens.c", .directory = "libschily/" },
+        .{ .name = "utimensat.c", .directory = "libschily/" },
+        .{ .name = "vsnprintf.c", .directory = "libschily/" },
+        .{ .name = "waitid.c", .directory = "libschily/" },
+        .{ .name = "wcscat.c", .directory = "libschily/" },
+        .{ .name = "wcscatl.c", .directory = "libschily/" },
+        .{ .name = "wcschr.c", .directory = "libschily/" },
+        .{ .name = "wcscmp.c", .directory = "libschily/" },
+        .{ .name = "wcscpy.c", .directory = "libschily/" },
+        .{ .name = "wcscspn.c", .directory = "libschily/" },
+        .{ .name = "wcsdup.c", .directory = "libschily/" },
+        .{ .name = "wcseql.c", .directory = "libschily/" },
+        .{ .name = "wcslen.c", .directory = "libschily/" },
+        .{ .name = "wcslcat.c", .directory = "libschily/" },
+        .{ .name = "wcslcatl.c", .directory = "libschily/" },
+        .{ .name = "wcslcpy.c", .directory = "libschily/" },
+        .{ .name = "wcsncat.c", .directory = "libschily/" },
+        .{ .name = "wcsncmp.c", .directory = "libschily/" },
+        .{ .name = "wcsncpy.c", .directory = "libschily/" },
+        .{ .name = "wcsndup.c", .directory = "libschily/" },
+        .{ .name = "wcsnlen.c", .directory = "libschily/" },
+        .{ .name = "wcsrchr.c", .directory = "libschily/" },
+        .{ .name = "wcsspn.c", .directory = "libschily/" },
+        .{ .name = "wcsstr.c", .directory = "libschily/" },
+        .{ .name = "wctype.c", .directory = "libschily/" },
+        .{ .name = "wcastoi.c", .directory = "libschily/" },
+        .{ .name = "wdabort.c", .directory = "libschily/" },
+        .{ .name = "zerobytes.c", .directory = "libschily/" },
+        .{ .name = "cvmod.c", .directory = "libschily/stdio/" },
+        .{ .name = "dat.c", .directory = "libschily/stdio/" },
+        .{ .name = "fcons.c", .directory = "libschily/stdio/" },
+        .{ .name = "fdown.c", .directory = "libschily/stdio/" },
+        .{ .name = "fdup.c", .directory = "libschily/stdio/" },
+        .{ .name = "ffileread.c", .directory = "libschily/stdio/" },
+        .{ .name = "ffilewrite.c", .directory = "libschily/stdio/" },
+        .{ .name = "fgetaline.c", .directory = "libschily/stdio/" },
+        .{ .name = "fgetline.c", .directory = "libschily/stdio/" },
+        .{ .name = "fgetstr.c", .directory = "libschily/stdio/" },
+        .{ .name = "file_getraise.c", .directory = "libschily/stdio/" },
+        .{ .name = "file_raise.c", .directory = "libschily/stdio/" },
+        .{ .name = "fileclose.c", .directory = "libschily/stdio/" },
+        .{ .name = "fileluopen.c", .directory = "libschily/stdio/" },
+        .{ .name = "fileopen.c", .directory = "libschily/stdio/" },
+        .{ .name = "filemopen.c", .directory = "libschily/stdio/" },
+        .{ .name = "filepos.c", .directory = "libschily/stdio/" },
+        .{ .name = "fileread.c", .directory = "libschily/stdio/" },
+        .{ .name = "filereopen.c", .directory = "libschily/stdio/" },
+        .{ .name = "fileseek.c", .directory = "libschily/stdio/" },
+        .{ .name = "filesize.c", .directory = "libschily/stdio/" },
+        .{ .name = "filestat.c", .directory = "libschily/stdio/" },
+        .{ .name = "filewrite.c", .directory = "libschily/stdio/" },
+        .{ .name = "flag.c", .directory = "libschily/stdio/" },
+        .{ .name = "flush.c", .directory = "libschily/stdio/" },
+        .{ .name = "fpipe.c", .directory = "libschily/stdio/" },
+        .{ .name = "getdelim.c", .directory = "libschily/stdio/" },
+        .{ .name = "niread.c", .directory = "libschily/stdio/" },
+        .{ .name = "niwrite.c", .directory = "libschily/stdio/" },
+        .{ .name = "nixread.c", .directory = "libschily/stdio/" },
+        .{ .name = "nixwrite.c", .directory = "libschily/stdio/" },
+        .{ .name = "openfd.c", .directory = "libschily/stdio/" },
+        .{ .name = "peekc.c", .directory = "libschily/stdio/" },
+        .{ .name = "fcons64.c", .directory = "libschily/stdio/" },
+        .{ .name = "fdup64.c", .directory = "libschily/stdio/" },
+        .{ .name = "fileluopen64.c", .directory = "libschily/stdio/" },
+        .{ .name = "fileopen64.c", .directory = "libschily/stdio/" },
+        .{ .name = "filemopen64.c", .directory = "libschily/stdio/" },
+        .{ .name = "filepos64.c", .directory = "libschily/stdio/" },
+        .{ .name = "filereopen64.c", .directory = "libschily/stdio/" },
+        .{ .name = "fileseek64.c", .directory = "libschily/stdio/" },
+        .{ .name = "filesize64.c", .directory = "libschily/stdio/" },
+        .{ .name = "filestat64.c", .directory = "libschily/stdio/" },
+        .{ .name = "openfd64.c", .directory = "libschily/stdio/" },
+        .{ .name = "abspath.c", .directory = "libschily/" },
+        .{ .name = "astoi.c", .directory = "libschily/" },
+        .{ .name = "astoll.c", .directory = "libschily/" },
+        .{ .name = "astoul.c", .directory = "libschily/" },
+        .{ .name = "astoull.c", .directory = "libschily/" },
+        .{ .name = "basename.c", .directory = "libschily/" },
+        .{ .name = "breakline.c", .directory = "libschily/" },
+        .{ .name = "checkerr.c", .directory = "libschily/" },
+        .{ .name = "comerr.c", .directory = "libschily/" },
+        .{ .name = "fcomerr.c", .directory = "libschily/" },
+        .{ .name = "gtcomerr.c", .directory = "libschily/" },
+        .{ .name = "fgtcomerr.c", .directory = "libschily/" },
+        .{ .name = "chown.c", .directory = "libschily/" },
+        .{ .name = "cmpbytes.c", .directory = "libschily/" },
+        .{ .name = "cmpmbytes.c", .directory = "libschily/" },
+        .{ .name = "cmpnullbytes.c", .directory = "libschily/" },
+        .{ .name = "dirent.c", .directory = "libschily/" },
+        .{ .name = "dirname.c", .directory = "libschily/" },
+        .{ .name = "diropen.c", .directory = "libschily/" },
+        .{ .name = "dlfcn.c", .directory = "libschily/" },
+        .{ .name = "eaccess.c", .directory = "libschily/" },
+        .{ .name = "error.c", .directory = "libschily/" },
+        .{ .name = "gterror.c", .directory = "libschily/" },
+        .{ .name = "faccessat.c", .directory = "libschily/" },
+        .{ .name = "fchdir.c", .directory = "libschily/" },
+        .{ .name = "fchmodat.c", .directory = "libschily/" },
+        .{ .name = "fchownat.c", .directory = "libschily/" },
+        .{ .name = "fconv.c", .directory = "libschily/" },
+        .{ .name = "fdopendir.c", .directory = "libschily/" },
+        .{ .name = "fexec.c", .directory = "libschily/" },
+        .{ .name = "fillbytes.c", .directory = "libschily/" },
+        .{ .name = "findinpath.c", .directory = "libschily/" },
+        .{ .name = "findbytes.c", .directory = "libschily/" },
+        .{ .name = "findline.c", .directory = "libschily/" },
+        .{ .name = "fnmatch.c", .directory = "libschily/" },
+        .{ .name = "format.c", .directory = "libschily/" },
+        .{ .name = "fpoff.c", .directory = "libschily/" },
+        .{ .name = "fprformat.c", .directory = "libschily/" },
+        .{ .name = "fstatat.c", .directory = "libschily/" },
+        .{ .name = "fstatat64.c", .directory = "libschily/" },
+        .{ .name = "fstream.c", .directory = "libschily/" },
+        .{ .name = "futimens.c", .directory = "libschily/" },
+        .{ .name = "futimesat.c", .directory = "libschily/" },
+        .{ .name = "getargs.c", .directory = "libschily/" },
+        .{ .name = "getav0.c", .directory = "libschily/" },
+    },
+};
+
+const cflags: CFlags = .{
+    .mkisofs = &.{},
+    .hfs_iso = &.{},
+    .schily = &.{},
+};
+
+// Although this function looks imperative, it does not perform the build
+// directly and instead it mutates the build graph (`b`) that will be then
+// executed by an external runner. The functions in `std.Build` implement a DSL
+// for defining build steps and express dependencies between them, allowing the
+// build runner to parallelize the build automatically (and the cache system to
+// know when a step doesn't need to be re-run).
+pub fn build(b: *std.Build) void {
+    const modules: Modules = .init(b);
+    modules.setupCFiles(b, &cfiles, &cflags);
+
+    modules.hfs_iso.addSystemIncludePath(b.path("incs/x86_64-linux-gcc/"));
+    modules.hfs_iso.addSystemIncludePath(b.path("include/"));
+    modules.hfs_iso.addCMacro("SCHILY_BUILD", "");
+    modules.hfs_iso.addCMacro("APPLE_HYB", "");
+    modules.hfs_iso.addCMacro("_GNU_SOURCE", "");
+    const lib_hfs_iso = b.addLibrary(.{
+        .name = "hfs_iso",
+        .root_module = modules.hfs_iso,
+        .linkage = .static,
+    });
+
+    modules.schily.addSystemIncludePath(b.path("incs/x86_64-linux-gcc/"));
+    modules.schily.addSystemIncludePath(b.path("include/"));
+    modules.schily.addSystemIncludePath(b.path("include/schily/"));
+    modules.schily.addSystemIncludePath(b.path("libschily/stdio/"));
+    modules.schily.addCMacro("SCHILY_BUILD", "");
+    modules.schily.addCMacro("USE_SCANSTACK", "");
+    modules.schily.addCMacro("PORT_ONLY", "");
+    modules.schily.addCMacro("NO_GETLINE_COMPAT", "");
+    modules.schily.addCMacro("_GNU_SOURCE", "");
+    const lib_schily = b.addLibrary(.{
+        .name = "schily",
+        .root_module = modules.schily,
+        .linkage = .static,
+    });
+
     modules.mkisofs.linkLibrary(lib_hfs_iso);
+    modules.mkisofs.linkLibrary(lib_schily);
     modules.mkisofs.addSystemIncludePath(b.path("incs/x86_64-linux-gcc/"));
     modules.mkisofs.addSystemIncludePath(b.path("include/"));
     modules.mkisofs.addSystemIncludePath(b.path("libscg/"));
@@ -158,6 +511,7 @@ pub fn build(b: *std.Build) void {
             .root_module = modules.mkisofs,
             .linkage = .static,
         }),
+        .schily = lib_schily,
     };
 
     BuildSteps.createSteps(b, &bins);
