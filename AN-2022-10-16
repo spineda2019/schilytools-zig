@@ -1,0 +1,143 @@
+New features with AN-2022-10-XX:
+
+With great sadness we report the death of schilytools main author and
+long time maintainer Jörg Schilling (1955-03-27--2021-10-10).  Jörg, we
+miss you!  After his passing, development has been picked up by a group
+of volunteers who would like to keep the project alive and well.  Our
+goal is to carefully preserve the portability and compatibility of this
+project while extending it to new platforms and implementing new tools
+and features that fit the tool set.
+
+As a part of the change in management, the schilytools project has moved
+from Sourceforge to Codeberg.  Please report bugs and send patches to
+our bug tracker:
+
+	https://codeberg.org/schilytools/schilytools
+
+or to our mailing list schilytools@mlists.in-berlin.de:
+
+	https://mlists.in-berlin.de/mailman/listinfo/schilytools-mlists.in-berlin.de
+
+Obtain release tarballs from:
+
+	http://fuz.su/pub/schilytools
+	ftp://fuz.su/pub/schilytools
+	rsync://fuz.su/pub/schilytools
+	https://schilytools.pkgsrc.pub/pub/schilytools/
+	http://schilytools.pkgsrc.pub/pub/schilytools/
+	https://mirrors.dotsrc.org/schilytools/
+	http://mirrors.dotsrc.org/schilytools/
+	ftp://mirrors.dotsrc.org/schilytools/
+	rsync://mirrors.dotsrc.org/schilytools/
+
+If you have previously reported bugs to Jörg Schilling and they have not
+been fixed, please report them again.  We do not have access to Jörg's
+private emails and do not know what you have reported.
+
+UPDATING:
+
+-	man2html: The man2html utility has been removed from the
+	schilytools distribution.  Users who wish to continue using this
+	utility are advised to use Thomas Dickey's version instead.
+
+		https://dickey.his.com/scripts/man2html.html
+
+-	Various man pages have been renamed to follow BSD conventions.
+	Users may need to manually remove the following old man pages on
+	update: streamarchive.4, makefiles.4, makerules.4, changeset.4,
+	sccschangeset.4, sccsfile.4, and star.4.
+
+-	sdd: the tool now defaults to ssh(1) instead of rsh(1) as the
+	remote shell.  The previous behaviour can be restored by compiling
+	with -UUSE_SSH, passing the new rsh=$shell option, or setting the
+	RSH environment variable to a suitable shell.
+
+NEW FEATURES:
+
+-	libfind/sfind: Fix incorrect error handling of -exec ... {} +
+	primaries.  Previously in some cases the primary returned an
+	error even though it should always return true and in other
+	cases it completely disregarded the exit code.  Now the primary
+	always returns true and sets the exit code of libfind and sfind
+	to a non-zero value in case one of the commands returned with a
+	non-zero exit code.
+	Reported by Tavian Barnes.  Submitted by Nico Sonack.
+
+-	libfind/sfind: Report failures to query the password/group
+	database for -nouser/-nogroup.  Previously failure to query
+	these databases was treated as if the user id/group id was not
+	found.  We now print a diagnostic message and return a non-zero
+	value if the getpwuid() or getgrgid() call failed.
+	Reported by Tavian Barnes.
+
+-	libfind/sfind: Report presence of directory loops.  Previously,
+	such directory loops were silently ignored.  Now, upon
+	encountering a directory loop, sfind prints a diagnostic message
+	to standard error.  The search is continued but sfind will
+	terminate with a nonzero exit status.  This change improves
+	compatibility with POSIX (cf. PASC interpretation request 1606).
+	All libfind consumers calling the treewalk() function (mkisofs,
+	sccs, and star) are affected.
+	Reported by Tavian Barnes.  Submitted by Nico Sonack.
+
+-	star: rename tests/compress archives to avoid issues on case
+	insensitive file systems.  These file systems do not like having
+	multiple files whose names only differ in letter case.  Rename
+	the archives to completely distinct file names to avoid this
+	issue.
+	Reported by tux <rosa.elefant@icloud.com>.
+
+-	mkisofs/mkisofs.8: adjust reference of magic(4) to magic(5)
+	Submitted by Martin Rehak.
+
+-	*: With the switch of Solaris from SysV man page sections to BSD
+	man page sections, man pages are now installed according to BSD
+	conventions instead of SysV conventions.  This affects the man
+	pages makefiles(4), makerules(4), streamarchive(4),
+	changeset(4), sccsfile(4), sccschangeset(4), and star(4).
+	Reported by Friedhelm Mehnert.
+
+-	*: All references to Solaris man pages have been adjusted to BSD
+	man page sections as used in Solaris 11.4.
+
+-	libschily/getargs.3: document surprising behaviour that the
+	the argument to a foo= parameter may be in the following
+	argument.  Thus, shell scripts should write foo= "$bar" instead
+	of foo=$bar if $bar could possibly be empty.
+	Submitted by Nico Sonack.
+
+-	libschily/getargs.3: improve spelling and grammar.
+
+-	sdd: default to ssh for rmt connections.  Just like star, the
+	sdd utility now defaults to ssh instead of rsh for rmt
+	connections.  The old behaviour can be restored by compiling
+	with -UUSE_SSH.
+	Submitted by Nico Sonack.
+
+-	sdd: add new option -rsh to set the remote shell program.  This
+	option does the same thing as the RSH environment variable but
+	permits setting the remote shell program through the command
+	line, which might be more convenient for users.
+	Submitted by Nico Sonack.
+
+-	RULES: symbol versioning has been enabled for FreeBSD following
+	intensive testing and preliminary enabling in the FreeBSD ports
+	collection.
+
+FUTURE DIRECTIONS:
+
+-	Schilytools contains pxupgrade, a dummy for a closed-source
+	component.  While the source code of this component is available
+	to the maintainer, it cannot be published due to an existing NDA
+	with Plextor.  Depending on whether we can get this NDA lifted
+	or not, the pxupgrade dummy code may either be replaced with the
+	real source code of the tool or removed altogether.
+
+CONTRIBUTORS FOR THIS VERSION:
+
+Robert CLAUSECKER <fuz@fuz.su>
+Martin REHAK <martin.rehak@oracle.com>
+Nico SONACK <nsonack@herrhotzenplotz.de>
+
+The schilytools maintainer
+Robert Clausecker <fuz@fuz.su>
