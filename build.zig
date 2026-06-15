@@ -9,18 +9,21 @@ const CFiles = struct {
     hfs_iso: []const SourceFile,
     mkisofs: []const SourceFile,
     schily: []const SourceFile,
+    find: []const SourceFile,
 };
 
 const CFlags = struct {
     hfs_iso: []const []const u8,
     mkisofs: []const []const u8,
     schily: []const []const u8,
+    find: []const []const u8,
 };
 
 const Modules = struct {
     hfs_iso: *std.Build.Module,
     mkisofs: *std.Build.Module,
     schily: *std.Build.Module,
+    find: *std.Build.Module,
 
     fn init(b: *std.Build) Modules {
         var this: Modules = undefined;
@@ -67,12 +70,14 @@ const Binaries = struct {
     hfs_iso: *std.Build.Step.Compile,
     mkisofs: *std.Build.Step.Compile,
     schily: *std.Build.Step.Compile,
+    find: *std.Build.Step.Compile,
 };
 
 const BuildSteps = struct {
     hfs_iso: *std.Build.Step,
     mkisofs: *std.Build.Step,
     schily: *std.Build.Step,
+    find: *std.Build.Step,
 
     fn createSteps(b: *std.Build, binaries: *const Binaries) void {
         const install_step = b.getInstallStep();
@@ -434,12 +439,51 @@ const cfiles: CFiles = .{
         .{ .name = "getargs.c", .directory = "libschily/" },
         .{ .name = "getav0.c", .directory = "libschily/" },
     },
+    .find = &.{
+        .{ .name = "find.c", .directory = "libfind/" },
+        .{ .name = "walk.c", .directory = "libfind/" },
+        .{ .name = "fetchdir.c", .directory = "libfind/" },
+        .{ .name = "cmpdir.c", .directory = "libfind/" },
+        .{ .name = "find_misc.c", .directory = "libfind/" },
+        .{ .name = "find_list.c", .directory = "libfind/" },
+        .{ .name = "find_main.c", .directory = "libfind/" },
+        .{ .name = "idcache.c", .directory = "libfind/" },
+        .{ .name = "ptime.c", .directory = "libfind/" },
+        .{ .name = "find.c", .directory = "libfind/" },
+        .{ .name = "walk.c", .directory = "libfind/" },
+        .{ .name = "fetchdir.c", .directory = "libfind/" },
+        .{ .name = "cmpdir.c", .directory = "libfind/" },
+        .{ .name = "find_misc.c", .directory = "libfind/" },
+        .{ .name = "find_list.c", .directory = "libfind/" },
+        .{ .name = "find_main.c", .directory = "libfind/" },
+        .{ .name = "idcache.c", .directory = "libfind/" },
+        .{ .name = "ptime.c", .directory = "libfind/" },
+        .{ .name = "find.c", .directory = "libfind/" },
+        .{ .name = "walk.c", .directory = "libfind/" },
+        .{ .name = "fetchdir.c", .directory = "libfind/" },
+        .{ .name = "cmpdir.c", .directory = "libfind/" },
+        .{ .name = "find_misc.c", .directory = "libfind/" },
+        .{ .name = "find_list.c", .directory = "libfind/" },
+        .{ .name = "find_main.c", .directory = "libfind/" },
+        .{ .name = "idcache.c", .directory = "libfind/" },
+        .{ .name = "ptime.c", .directory = "libfind/" },
+        .{ .name = "find.c", .directory = "libfind/" },
+        .{ .name = "walk.c", .directory = "libfind/" },
+        .{ .name = "fetchdir.c", .directory = "libfind/" },
+        .{ .name = "cmpdir.c", .directory = "libfind/" },
+        .{ .name = "find_misc.c", .directory = "libfind/" },
+        .{ .name = "find_list.c", .directory = "libfind/" },
+        .{ .name = "find_main.c", .directory = "libfind/" },
+        .{ .name = "idcache.c", .directory = "libfind/" },
+        .{ .name = "ptime.c", .directory = "libfind/" },
+    },
 };
 
 const cflags: CFlags = .{
     .mkisofs = &.{},
     .hfs_iso = &.{},
     .schily = &.{},
+    .find = &.{},
 };
 
 // Although this function looks imperative, it does not perform the build
@@ -478,8 +522,26 @@ pub fn build(b: *std.Build) void {
         .linkage = .static,
     });
 
+    modules.find.addSystemIncludePath(b.path("incs/x86_64-linux-gcc/"));
+    modules.find.addSystemIncludePath(b.path("include/"));
+    modules.find.addSystemIncludePath(b.path("include/schily/"));
+    modules.find.addCMacro("USE_LARGEFILES", "");
+    modules.find.addCMacro("USE_ACL", "");
+    modules.find.addCMacro("USE_XATTR", "");
+    modules.find.addCMacro("USE_NLS", "");
+    modules.find.addCMacro("USE_DGETTEXT", "");
+    modules.find.addCMacro("TEXT_DOMAIN", "\"SCHILY_FIND\"");
+    modules.find.addCMacro("SCHILY_PRINT", "");
+    modules.find.addCMacro("_GNU_SOURCE", "");
+    const lib_find = b.addLibrary(.{
+        .name = "find",
+        .root_module = modules.find,
+        .linkage = .static,
+    });
+
     modules.mkisofs.linkLibrary(lib_hfs_iso);
     modules.mkisofs.linkLibrary(lib_schily);
+    modules.mkisofs.linkLibrary(lib_find);
     modules.mkisofs.addSystemIncludePath(b.path("incs/x86_64-linux-gcc/"));
     modules.mkisofs.addSystemIncludePath(b.path("include/"));
     modules.mkisofs.addSystemIncludePath(b.path("libscg/"));
@@ -512,6 +574,7 @@ pub fn build(b: *std.Build) void {
             .linkage = .static,
         }),
         .schily = lib_schily,
+        .find = lib_find,
     };
 
     BuildSteps.createSteps(b, &bins);
