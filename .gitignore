@@ -1,7 +1,6 @@
 # generated directories
 OBJ/
 bins/
-incs/
 libs/
 
 # build artifacts
