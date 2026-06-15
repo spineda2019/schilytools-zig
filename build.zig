@@ -126,7 +126,6 @@ const BuildSteps = struct {
             const step: *std.Build.Step = b.step(field_name, "Build " ++ field_name);
             const compile: *std.Build.Step.Compile = @field(binaries, field_name);
             const artifact_step = b.addInstallArtifact(compile, .{});
-            b.installArtifact(compile);
             step.dependOn(&artifact_step.step);
             install_step.dependOn(step);
         }
@@ -674,4 +673,5 @@ pub fn build(b: *std.Build) void {
     };
 
     BuildSteps.createSteps(b, &bins);
+    b.installArtifact(bins.mkisofs);
 }

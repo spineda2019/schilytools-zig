@@ -85,5 +85,8 @@
         "libcdrdeflt/",
         "libdeflt/",
         "libmdigest/",
+        "include/",
+        "incs/",
+        "cdrecord/",
     },
 }
