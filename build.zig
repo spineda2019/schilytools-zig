@@ -628,6 +628,8 @@ pub fn build(b: *std.Build) void {
     modules.mkisofs.linkLibrary(lib_cdrdeflt);
     modules.mkisofs.linkLibrary(lib_deflt);
     modules.mkisofs.linkLibrary(lib_mdigest);
+    modules.mkisofs.linkSystemLibrary("acl", .{});
+    modules.mkisofs.linkSystemLibrary("cap", .{});
     modules.mkisofs.addSystemIncludePath(b.path("incs/x86_64-linux-gcc/"));
     modules.mkisofs.addSystemIncludePath(b.path("include/"));
     modules.mkisofs.addSystemIncludePath(b.path("libscg/"));
@@ -657,7 +659,6 @@ pub fn build(b: *std.Build) void {
         .mkisofs = b.addExecutable(.{
             .name = "mkisofs",
             .root_module = modules.mkisofs,
-            .linkage = .static,
         }),
         .schily = lib_schily,
         .find = lib_find,
