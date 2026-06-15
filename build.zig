@@ -10,6 +10,9 @@ const CFiles = struct {
     mkisofs: []const SourceFile,
     schily: []const SourceFile,
     find: []const SourceFile,
+    siconv: []const SourceFile,
+    scgcmd: []const SourceFile,
+    file: []const SourceFile,
 };
 
 const CFlags = struct {
@@ -17,6 +20,9 @@ const CFlags = struct {
     mkisofs: []const []const u8,
     schily: []const []const u8,
     find: []const []const u8,
+    siconv: []const []const u8,
+    scgcmd: []const []const u8,
+    file: []const []const u8,
 };
 
 const Modules = struct {
@@ -24,6 +30,9 @@ const Modules = struct {
     mkisofs: *std.Build.Module,
     schily: *std.Build.Module,
     find: *std.Build.Module,
+    siconv: *std.Build.Module,
+    scgcmd: *std.Build.Module,
+    file: *std.Build.Module,
 
     fn init(b: *std.Build) Modules {
         var this: Modules = undefined;
@@ -71,6 +80,9 @@ const Binaries = struct {
     mkisofs: *std.Build.Step.Compile,
     schily: *std.Build.Step.Compile,
     find: *std.Build.Step.Compile,
+    siconv: *std.Build.Step.Compile,
+    scgcmd: *std.Build.Step.Compile,
+    file: *std.Build.Step.Compile,
 };
 
 const BuildSteps = struct {
@@ -78,6 +90,9 @@ const BuildSteps = struct {
     mkisofs: *std.Build.Step,
     schily: *std.Build.Step,
     find: *std.Build.Step,
+    siconv: *std.Build.Step,
+    scgcmd: *std.Build.Step,
+    file: *std.Build.Step,
 
     fn createSteps(b: *std.Build, binaries: *const Binaries) void {
         const install_step = b.getInstallStep();
@@ -477,6 +492,53 @@ const cfiles: CFiles = .{
         .{ .name = "idcache.c", .directory = "libfind/" },
         .{ .name = "ptime.c", .directory = "libfind/" },
     },
+    .siconv = &.{
+        .{ .name = "sic_nls.c", .directory = "libsiconv/" },
+    },
+    .scgcmd = &.{
+        .{ .name = "buffer.c", .directory = "libscgcmd/" },
+        .{ .name = "inquiry.c", .directory = "libscgcmd/" },
+        .{ .name = "modes.c", .directory = "libscgcmd/" },
+        .{ .name = "modesense.c", .directory = "libscgcmd/" },
+        .{ .name = "read.c", .directory = "libscgcmd/" },
+        .{ .name = "readcap.c", .directory = "libscgcmd/" },
+        .{ .name = "ready.c", .directory = "libscgcmd/" },
+        .{ .name = "buffer.c", .directory = "libscgcmd/" },
+        .{ .name = "inquiry.c", .directory = "libscgcmd/" },
+        .{ .name = "modes.c", .directory = "libscgcmd/" },
+        .{ .name = "modesense.c", .directory = "libscgcmd/" },
+        .{ .name = "read.c", .directory = "libscgcmd/" },
+        .{ .name = "readcap.c", .directory = "libscgcmd/" },
+        .{ .name = "ready.c", .directory = "libscgcmd/" },
+        .{ .name = "buffer.c", .directory = "libscgcmd/" },
+        .{ .name = "inquiry.c", .directory = "libscgcmd/" },
+        .{ .name = "modes.c", .directory = "libscgcmd/" },
+        .{ .name = "modesense.c", .directory = "libscgcmd/" },
+        .{ .name = "read.c", .directory = "libscgcmd/" },
+        .{ .name = "readcap.c", .directory = "libscgcmd/" },
+        .{ .name = "ready.c", .directory = "libscgcmd/" },
+        .{ .name = "buffer.c", .directory = "libscgcmd/" },
+        .{ .name = "inquiry.c", .directory = "libscgcmd/" },
+        .{ .name = "modes.c", .directory = "libscgcmd/" },
+        .{ .name = "modesense.c", .directory = "libscgcmd/" },
+        .{ .name = "read.c", .directory = "libscgcmd/" },
+        .{ .name = "readcap.c", .directory = "libscgcmd/" },
+        .{ .name = "ready.c", .directory = "libscgcmd/" },
+    },
+    .file = &.{
+        .{ .name = "file.c", .directory = "libfile/" },
+        .{ .name = "apprentice.c", .directory = "libfile/" },
+        .{ .name = "softmagic.c", .directory = "libfile/" },
+        .{ .name = "file.c", .directory = "libfile/" },
+        .{ .name = "apprentice.c", .directory = "libfile/" },
+        .{ .name = "softmagic.c", .directory = "libfile/" },
+        .{ .name = "file.c", .directory = "libfile/" },
+        .{ .name = "apprentice.c", .directory = "libfile/" },
+        .{ .name = "softmagic.c", .directory = "libfile/" },
+        .{ .name = "file.c", .directory = "libfile/" },
+        .{ .name = "apprentice.c", .directory = "libfile/" },
+        .{ .name = "softmagic.c", .directory = "libfile/" },
+    },
 };
 
 const cflags: CFlags = .{
@@ -484,6 +546,9 @@ const cflags: CFlags = .{
     .hfs_iso = &.{},
     .schily = &.{},
     .find = &.{},
+    .siconv = &.{},
+    .scgcmd = &.{},
+    .file = &.{},
 };
 
 // Although this function looks imperative, it does not perform the build
@@ -539,9 +604,50 @@ pub fn build(b: *std.Build) void {
         .linkage = .static,
     });
 
+    modules.siconv.addSystemIncludePath(b.path("incs/x86_64-linux-gcc/"));
+    modules.siconv.addSystemIncludePath(b.path("include/"));
+    modules.siconv.addCMacro("SCHILY_BUILD", "");
+    modules.siconv.addCMacro("SCHILY_PRINT", "");
+    modules.siconv.addCMacro("USE_ICONV", "");
+    modules.siconv.addCMacro("INS_BASE", "\"/opt/schily\"");
+    modules.siconv.addCMacro("_GNU_SOURCE", "");
+    const lib_siconv = b.addLibrary(.{
+        .name = "siconv",
+        .root_module = modules.siconv,
+        .linkage = .static,
+    });
+
+    modules.scgcmd.addSystemIncludePath(b.path("incs/x86_64-linux-gcc/"));
+    modules.scgcmd.addSystemIncludePath(b.path("include/"));
+    modules.scgcmd.addSystemIncludePath(b.path("libscgcmd/"));
+    modules.scgcmd.addSystemIncludePath(b.path("libscg/"));
+    modules.scgcmd.addCMacro("SCHILY_BUILD", "");
+    modules.scgcmd.addCMacro("USE_LARGEFILES", "");
+    modules.scgcmd.addCMacro("SCHILY_PRINT", "");
+    modules.scgcmd.addCMacro("_GNU_SOURCE", "");
+    const lib_scgcmd = b.addLibrary(.{
+        .name = "scgcmd",
+        .root_module = modules.scgcmd,
+        .linkage = .static,
+    });
+
+    modules.file.addSystemIncludePath(b.path("incs/x86_64-linux-gcc/"));
+    modules.file.addSystemIncludePath(b.path("include/"));
+    modules.file.addCMacro("SCHILY_BUILD", "");
+    modules.file.addCMacro("SCHILY_PRINT", "");
+    modules.file.addCMacro("_GNU_SOURCE", "");
+    const lib_file = b.addLibrary(.{
+        .name = "file",
+        .root_module = modules.file,
+        .linkage = .static,
+    });
+
     modules.mkisofs.linkLibrary(lib_hfs_iso);
     modules.mkisofs.linkLibrary(lib_schily);
     modules.mkisofs.linkLibrary(lib_find);
+    modules.mkisofs.linkLibrary(lib_siconv);
+    modules.mkisofs.linkLibrary(lib_scgcmd);
+    modules.mkisofs.linkLibrary(lib_file);
     modules.mkisofs.addSystemIncludePath(b.path("incs/x86_64-linux-gcc/"));
     modules.mkisofs.addSystemIncludePath(b.path("include/"));
     modules.mkisofs.addSystemIncludePath(b.path("libscg/"));
@@ -575,6 +681,9 @@ pub fn build(b: *std.Build) void {
         }),
         .schily = lib_schily,
         .find = lib_find,
+        .siconv = lib_siconv,
+        .scgcmd = lib_scgcmd,
+        .file = lib_file,
     };
 
     BuildSteps.createSteps(b, &bins);
