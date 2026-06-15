@@ -13,6 +13,11 @@ const CFiles = struct {
     siconv: []const SourceFile,
     scgcmd: []const SourceFile,
     file: []const SourceFile,
+    scg: []const SourceFile,
+    rscg: []const SourceFile,
+    cdrdeflt: []const SourceFile,
+    deflt: []const SourceFile,
+    mdigest: []const SourceFile,
 };
 
 const CFlags = struct {
@@ -23,6 +28,11 @@ const CFlags = struct {
     siconv: []const []const u8,
     scgcmd: []const []const u8,
     file: []const []const u8,
+    scg: []const []const u8,
+    rscg: []const []const u8,
+    cdrdeflt: []const []const u8,
+    deflt: []const []const u8,
+    mdigest: []const []const u8,
 };
 
 const Modules = struct {
@@ -33,6 +43,11 @@ const Modules = struct {
     siconv: *std.Build.Module,
     scgcmd: *std.Build.Module,
     file: *std.Build.Module,
+    scg: *std.Build.Module,
+    rscg: *std.Build.Module,
+    cdrdeflt: *std.Build.Module,
+    deflt: *std.Build.Module,
+    mdigest: *std.Build.Module,
 
     fn init(b: *std.Build) Modules {
         var this: Modules = undefined;
@@ -83,6 +98,11 @@ const Binaries = struct {
     siconv: *std.Build.Step.Compile,
     scgcmd: *std.Build.Step.Compile,
     file: *std.Build.Step.Compile,
+    scg: *std.Build.Step.Compile,
+    rscg: *std.Build.Step.Compile,
+    cdrdeflt: *std.Build.Step.Compile,
+    deflt: *std.Build.Step.Compile,
+    mdigest: *std.Build.Step.Compile,
 };
 
 const BuildSteps = struct {
@@ -93,6 +113,11 @@ const BuildSteps = struct {
     siconv: *std.Build.Step,
     scgcmd: *std.Build.Step,
     file: *std.Build.Step,
+    scg: *std.Build.Step,
+    rscg: *std.Build.Step,
+    cdrdeflt: *std.Build.Step,
+    deflt: *std.Build.Step,
+    mdigest: *std.Build.Step,
 
     fn createSteps(b: *std.Build, binaries: *const Binaries) void {
         const install_step = b.getInstallStep();
@@ -364,124 +389,8 @@ const cfiles: CFiles = .{
         .{ .name = "wcastoi.c", .directory = "libschily/" },
         .{ .name = "wdabort.c", .directory = "libschily/" },
         .{ .name = "zerobytes.c", .directory = "libschily/" },
-        .{ .name = "cvmod.c", .directory = "libschily/stdio/" },
-        .{ .name = "dat.c", .directory = "libschily/stdio/" },
-        .{ .name = "fcons.c", .directory = "libschily/stdio/" },
-        .{ .name = "fdown.c", .directory = "libschily/stdio/" },
-        .{ .name = "fdup.c", .directory = "libschily/stdio/" },
-        .{ .name = "ffileread.c", .directory = "libschily/stdio/" },
-        .{ .name = "ffilewrite.c", .directory = "libschily/stdio/" },
-        .{ .name = "fgetaline.c", .directory = "libschily/stdio/" },
-        .{ .name = "fgetline.c", .directory = "libschily/stdio/" },
-        .{ .name = "fgetstr.c", .directory = "libschily/stdio/" },
-        .{ .name = "file_getraise.c", .directory = "libschily/stdio/" },
-        .{ .name = "file_raise.c", .directory = "libschily/stdio/" },
-        .{ .name = "fileclose.c", .directory = "libschily/stdio/" },
-        .{ .name = "fileluopen.c", .directory = "libschily/stdio/" },
-        .{ .name = "fileopen.c", .directory = "libschily/stdio/" },
-        .{ .name = "filemopen.c", .directory = "libschily/stdio/" },
-        .{ .name = "filepos.c", .directory = "libschily/stdio/" },
-        .{ .name = "fileread.c", .directory = "libschily/stdio/" },
-        .{ .name = "filereopen.c", .directory = "libschily/stdio/" },
-        .{ .name = "fileseek.c", .directory = "libschily/stdio/" },
-        .{ .name = "filesize.c", .directory = "libschily/stdio/" },
-        .{ .name = "filestat.c", .directory = "libschily/stdio/" },
-        .{ .name = "filewrite.c", .directory = "libschily/stdio/" },
-        .{ .name = "flag.c", .directory = "libschily/stdio/" },
-        .{ .name = "flush.c", .directory = "libschily/stdio/" },
-        .{ .name = "fpipe.c", .directory = "libschily/stdio/" },
-        .{ .name = "getdelim.c", .directory = "libschily/stdio/" },
-        .{ .name = "niread.c", .directory = "libschily/stdio/" },
-        .{ .name = "niwrite.c", .directory = "libschily/stdio/" },
-        .{ .name = "nixread.c", .directory = "libschily/stdio/" },
-        .{ .name = "nixwrite.c", .directory = "libschily/stdio/" },
-        .{ .name = "openfd.c", .directory = "libschily/stdio/" },
-        .{ .name = "peekc.c", .directory = "libschily/stdio/" },
-        .{ .name = "fcons64.c", .directory = "libschily/stdio/" },
-        .{ .name = "fdup64.c", .directory = "libschily/stdio/" },
-        .{ .name = "fileluopen64.c", .directory = "libschily/stdio/" },
-        .{ .name = "fileopen64.c", .directory = "libschily/stdio/" },
-        .{ .name = "filemopen64.c", .directory = "libschily/stdio/" },
-        .{ .name = "filepos64.c", .directory = "libschily/stdio/" },
-        .{ .name = "filereopen64.c", .directory = "libschily/stdio/" },
-        .{ .name = "fileseek64.c", .directory = "libschily/stdio/" },
-        .{ .name = "filesize64.c", .directory = "libschily/stdio/" },
-        .{ .name = "filestat64.c", .directory = "libschily/stdio/" },
-        .{ .name = "openfd64.c", .directory = "libschily/stdio/" },
-        .{ .name = "abspath.c", .directory = "libschily/" },
-        .{ .name = "astoi.c", .directory = "libschily/" },
-        .{ .name = "astoll.c", .directory = "libschily/" },
-        .{ .name = "astoul.c", .directory = "libschily/" },
-        .{ .name = "astoull.c", .directory = "libschily/" },
-        .{ .name = "basename.c", .directory = "libschily/" },
-        .{ .name = "breakline.c", .directory = "libschily/" },
-        .{ .name = "checkerr.c", .directory = "libschily/" },
-        .{ .name = "comerr.c", .directory = "libschily/" },
-        .{ .name = "fcomerr.c", .directory = "libschily/" },
-        .{ .name = "gtcomerr.c", .directory = "libschily/" },
-        .{ .name = "fgtcomerr.c", .directory = "libschily/" },
-        .{ .name = "chown.c", .directory = "libschily/" },
-        .{ .name = "cmpbytes.c", .directory = "libschily/" },
-        .{ .name = "cmpmbytes.c", .directory = "libschily/" },
-        .{ .name = "cmpnullbytes.c", .directory = "libschily/" },
-        .{ .name = "dirent.c", .directory = "libschily/" },
-        .{ .name = "dirname.c", .directory = "libschily/" },
-        .{ .name = "diropen.c", .directory = "libschily/" },
-        .{ .name = "dlfcn.c", .directory = "libschily/" },
-        .{ .name = "eaccess.c", .directory = "libschily/" },
-        .{ .name = "error.c", .directory = "libschily/" },
-        .{ .name = "gterror.c", .directory = "libschily/" },
-        .{ .name = "faccessat.c", .directory = "libschily/" },
-        .{ .name = "fchdir.c", .directory = "libschily/" },
-        .{ .name = "fchmodat.c", .directory = "libschily/" },
-        .{ .name = "fchownat.c", .directory = "libschily/" },
-        .{ .name = "fconv.c", .directory = "libschily/" },
-        .{ .name = "fdopendir.c", .directory = "libschily/" },
-        .{ .name = "fexec.c", .directory = "libschily/" },
-        .{ .name = "fillbytes.c", .directory = "libschily/" },
-        .{ .name = "findinpath.c", .directory = "libschily/" },
-        .{ .name = "findbytes.c", .directory = "libschily/" },
-        .{ .name = "findline.c", .directory = "libschily/" },
-        .{ .name = "fnmatch.c", .directory = "libschily/" },
-        .{ .name = "format.c", .directory = "libschily/" },
-        .{ .name = "fpoff.c", .directory = "libschily/" },
-        .{ .name = "fprformat.c", .directory = "libschily/" },
-        .{ .name = "fstatat.c", .directory = "libschily/" },
-        .{ .name = "fstatat64.c", .directory = "libschily/" },
-        .{ .name = "fstream.c", .directory = "libschily/" },
-        .{ .name = "futimens.c", .directory = "libschily/" },
-        .{ .name = "futimesat.c", .directory = "libschily/" },
-        .{ .name = "getargs.c", .directory = "libschily/" },
-        .{ .name = "getav0.c", .directory = "libschily/" },
     },
     .find = &.{
-        .{ .name = "find.c", .directory = "libfind/" },
-        .{ .name = "walk.c", .directory = "libfind/" },
-        .{ .name = "fetchdir.c", .directory = "libfind/" },
-        .{ .name = "cmpdir.c", .directory = "libfind/" },
-        .{ .name = "find_misc.c", .directory = "libfind/" },
-        .{ .name = "find_list.c", .directory = "libfind/" },
-        .{ .name = "find_main.c", .directory = "libfind/" },
-        .{ .name = "idcache.c", .directory = "libfind/" },
-        .{ .name = "ptime.c", .directory = "libfind/" },
-        .{ .name = "find.c", .directory = "libfind/" },
-        .{ .name = "walk.c", .directory = "libfind/" },
-        .{ .name = "fetchdir.c", .directory = "libfind/" },
-        .{ .name = "cmpdir.c", .directory = "libfind/" },
-        .{ .name = "find_misc.c", .directory = "libfind/" },
-        .{ .name = "find_list.c", .directory = "libfind/" },
-        .{ .name = "find_main.c", .directory = "libfind/" },
-        .{ .name = "idcache.c", .directory = "libfind/" },
-        .{ .name = "ptime.c", .directory = "libfind/" },
-        .{ .name = "find.c", .directory = "libfind/" },
-        .{ .name = "walk.c", .directory = "libfind/" },
-        .{ .name = "fetchdir.c", .directory = "libfind/" },
-        .{ .name = "cmpdir.c", .directory = "libfind/" },
-        .{ .name = "find_misc.c", .directory = "libfind/" },
-        .{ .name = "find_list.c", .directory = "libfind/" },
-        .{ .name = "find_main.c", .directory = "libfind/" },
-        .{ .name = "idcache.c", .directory = "libfind/" },
-        .{ .name = "ptime.c", .directory = "libfind/" },
         .{ .name = "find.c", .directory = "libfind/" },
         .{ .name = "walk.c", .directory = "libfind/" },
         .{ .name = "fetchdir.c", .directory = "libfind/" },
@@ -503,41 +412,42 @@ const cfiles: CFiles = .{
         .{ .name = "read.c", .directory = "libscgcmd/" },
         .{ .name = "readcap.c", .directory = "libscgcmd/" },
         .{ .name = "ready.c", .directory = "libscgcmd/" },
-        .{ .name = "buffer.c", .directory = "libscgcmd/" },
-        .{ .name = "inquiry.c", .directory = "libscgcmd/" },
-        .{ .name = "modes.c", .directory = "libscgcmd/" },
-        .{ .name = "modesense.c", .directory = "libscgcmd/" },
-        .{ .name = "read.c", .directory = "libscgcmd/" },
-        .{ .name = "readcap.c", .directory = "libscgcmd/" },
-        .{ .name = "ready.c", .directory = "libscgcmd/" },
-        .{ .name = "buffer.c", .directory = "libscgcmd/" },
-        .{ .name = "inquiry.c", .directory = "libscgcmd/" },
-        .{ .name = "modes.c", .directory = "libscgcmd/" },
-        .{ .name = "modesense.c", .directory = "libscgcmd/" },
-        .{ .name = "read.c", .directory = "libscgcmd/" },
-        .{ .name = "readcap.c", .directory = "libscgcmd/" },
-        .{ .name = "ready.c", .directory = "libscgcmd/" },
-        .{ .name = "buffer.c", .directory = "libscgcmd/" },
-        .{ .name = "inquiry.c", .directory = "libscgcmd/" },
-        .{ .name = "modes.c", .directory = "libscgcmd/" },
-        .{ .name = "modesense.c", .directory = "libscgcmd/" },
-        .{ .name = "read.c", .directory = "libscgcmd/" },
-        .{ .name = "readcap.c", .directory = "libscgcmd/" },
-        .{ .name = "ready.c", .directory = "libscgcmd/" },
     },
     .file = &.{
         .{ .name = "file.c", .directory = "libfile/" },
         .{ .name = "apprentice.c", .directory = "libfile/" },
         .{ .name = "softmagic.c", .directory = "libfile/" },
-        .{ .name = "file.c", .directory = "libfile/" },
-        .{ .name = "apprentice.c", .directory = "libfile/" },
-        .{ .name = "softmagic.c", .directory = "libfile/" },
-        .{ .name = "file.c", .directory = "libfile/" },
-        .{ .name = "apprentice.c", .directory = "libfile/" },
-        .{ .name = "softmagic.c", .directory = "libfile/" },
-        .{ .name = "file.c", .directory = "libfile/" },
-        .{ .name = "apprentice.c", .directory = "libfile/" },
-        .{ .name = "softmagic.c", .directory = "libfile/" },
+    },
+    .scg = &.{
+        .{ .name = "scsitransp.c", .directory = "libscg/" },
+        .{ .name = "scsihack.c", .directory = "libscg/" },
+        .{ .name = "scsiopen.c", .directory = "libscg/" },
+        .{ .name = "scgsettarget.c", .directory = "libscg/" },
+        .{ .name = "scsierrs.c", .directory = "libscg/" },
+        .{ .name = "scgtimes.c", .directory = "libscg/" },
+        .{ .name = "scsihelp.c", .directory = "libscg/" },
+        .{ .name = "scsiopts.c", .directory = "libscg/" },
+        .{ .name = "rdummy.c", .directory = "libscg/" },
+    },
+    .rscg = &.{
+        .{ .name = "scsi-remote.c", .directory = "librscg/" },
+    },
+    .cdrdeflt = &.{
+        .{ .name = "cdrdeflt.c", .directory = "libcdrdeflt/" },
+    },
+    .deflt = &.{
+        .{ .name = "default.c", .directory = "libdeflt/" },
+    },
+    .mdigest = &.{
+        .{ .name = "md4.c", .directory = "libmdigest/" },
+        .{ .name = "md5.c", .directory = "libmdigest/" },
+        .{ .name = "rmd160.c", .directory = "libmdigest/" },
+        .{ .name = "sha1.c", .directory = "libmdigest/" },
+        .{ .name = "sha2.c", .directory = "libmdigest/" },
+        .{ .name = "sha3.c", .directory = "libmdigest/" },
+        .{ .name = "byte_order.c", .directory = "libmdigest/" },
+        .{ .name = "blake2b.c", .directory = "libmdigest/" },
+        .{ .name = "blake2s.c", .directory = "libmdigest/" },
     },
 };
 
@@ -549,6 +459,11 @@ const cflags: CFlags = .{
     .siconv = &.{},
     .scgcmd = &.{},
     .file = &.{},
+    .scg = &.{},
+    .rscg = &.{},
+    .cdrdeflt = &.{},
+    .deflt = &.{},
+    .mdigest = &.{},
 };
 
 // Although this function looks imperative, it does not perform the build
@@ -642,12 +557,77 @@ pub fn build(b: *std.Build) void {
         .linkage = .static,
     });
 
+    modules.scg.addSystemIncludePath(b.path("incs/x86_64-linux-gcc/"));
+    modules.scg.addSystemIncludePath(b.path("include/"));
+    modules.scg.addSystemIncludePath(b.path("libscg/"));
+    modules.scg.addCMacro("SCHILY_BUILD", "");
+    modules.scg.addCMacro("USE_PG", "");
+    modules.scg.addCMacro("SCHILY_PRINT", "");
+    modules.scg.addCMacro("_GNU_SOURCE", "");
+    const lib_scg = b.addLibrary(.{
+        .name = "scg",
+        .root_module = modules.scg,
+        .linkage = .static,
+    });
+
+    modules.rscg.addSystemIncludePath(b.path("incs/x86_64-linux-gcc/"));
+    modules.rscg.addSystemIncludePath(b.path("include/"));
+    modules.rscg.addSystemIncludePath(b.path("libscg/"));
+    modules.rscg.addCMacro("SCHILY_BUILD", "");
+    modules.rscg.addCMacro("USE_PG", "");
+    modules.rscg.addCMacro("USE_RCMD_RSH", "");
+    modules.rscg.addCMacro("SCHILY_PRINT", "");
+    modules.rscg.addCMacro("_GNU_SOURCE", "");
+    const lib_rscg = b.addLibrary(.{
+        .name = "rscg",
+        .root_module = modules.rscg,
+        .linkage = .static,
+    });
+
+    modules.cdrdeflt.addSystemIncludePath(b.path("incs/x86_64-linux-gcc/"));
+    modules.cdrdeflt.addSystemIncludePath(b.path("include/"));
+    modules.cdrdeflt.addSystemIncludePath(b.path("libcdrdeflt/"));
+    modules.cdrdeflt.addCMacro("SCHILY_BUILD", "");
+    modules.cdrdeflt.addCMacro("_GNU_SOURCE", "");
+    const lib_cdrdeflt = b.addLibrary(.{
+        .name = "cdrdeflt",
+        .root_module = modules.cdrdeflt,
+        .linkage = .static,
+    });
+
+    modules.deflt.addSystemIncludePath(b.path("incs/x86_64-linux-gcc/"));
+    modules.deflt.addSystemIncludePath(b.path("include/"));
+    modules.deflt.addCMacro("SCHILY_BUILD", "");
+    modules.deflt.addCMacro("_GNU_SOURCE", "");
+    const lib_deflt = b.addLibrary(.{
+        .name = "deflt",
+        .root_module = modules.deflt,
+        .linkage = .static,
+    });
+
+    modules.mdigest.addSystemIncludePath(b.path("incs/x86_64-linux-gcc/"));
+    modules.mdigest.addSystemIncludePath(b.path("include/"));
+    modules.mdigest.addCMacro("SCHILY_BUILD", "");
+    modules.mdigest.addCMacro("USE_PG", "");
+    modules.mdigest.addCMacro("SHA2_UNROLL_TRANSFORM", "");
+    modules.mdigest.addCMacro("_GNU_SOURCE", "");
+    const lib_mdigest = b.addLibrary(.{
+        .name = "mdigest",
+        .root_module = modules.mdigest,
+        .linkage = .static,
+    });
+
     modules.mkisofs.linkLibrary(lib_hfs_iso);
     modules.mkisofs.linkLibrary(lib_schily);
     modules.mkisofs.linkLibrary(lib_find);
     modules.mkisofs.linkLibrary(lib_siconv);
     modules.mkisofs.linkLibrary(lib_scgcmd);
     modules.mkisofs.linkLibrary(lib_file);
+    modules.mkisofs.linkLibrary(lib_scg);
+    modules.mkisofs.linkLibrary(lib_rscg);
+    modules.mkisofs.linkLibrary(lib_cdrdeflt);
+    modules.mkisofs.linkLibrary(lib_deflt);
+    modules.mkisofs.linkLibrary(lib_mdigest);
     modules.mkisofs.addSystemIncludePath(b.path("incs/x86_64-linux-gcc/"));
     modules.mkisofs.addSystemIncludePath(b.path("include/"));
     modules.mkisofs.addSystemIncludePath(b.path("libscg/"));
@@ -684,6 +664,11 @@ pub fn build(b: *std.Build) void {
         .siconv = lib_siconv,
         .scgcmd = lib_scgcmd,
         .file = lib_file,
+        .scg = lib_scg,
+        .rscg = lib_rscg,
+        .cdrdeflt = lib_cdrdeflt,
+        .deflt = lib_deflt,
+        .mdigest = lib_mdigest,
     };
 
     BuildSteps.createSteps(b, &bins);
